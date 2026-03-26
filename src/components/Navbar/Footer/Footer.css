@@ -1,8 +1,11 @@
-.footer{
-    text-align: center;
-    margin: auto;
-    max-width: 80%;
-    border-top: 1px solid #989898;
-    padding: 15px 0px;
-    font-size: 13px;
+.footer {
+  margin-top: auto;
+  margin-bottom: 20px;
+  padding: 18px 24px;
+  text-align: center;
+  color: var(--text-muted);
+  border: 1px solid var(--surface-border);
+  border-radius: 22px;
+  background: rgba(7, 18, 36, 0.68);
+  backdrop-filter: blur(16px);
 }

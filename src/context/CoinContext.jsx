@@ -1,41 +1,55 @@
-import { createContext, useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
+import { fetchCoinsMarkets } from '../services/coinGeckoApi';
+import { CoinContext } from './CoinContextValue';
 
-export const CoinContext = createContext();
+const supportedCurrencies = {
+  usd: { name: 'usd', symbol: '$', label: 'USD' },
+  eur: { name: 'eur', symbol: 'EUR', label: 'EUR' },
+  inr: { name: 'inr', symbol: 'Rs', label: 'INR' },
+};
 
-const CoinContextProvider = (props) => {
+const CoinContextProvider = ({ children }) => {
+  const [allCoin, setAllCoin] = useState([]);
+  const [currency, setCurrency] = useState(supportedCurrencies.usd);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-    const [allCoin, setAllcoin] = useState([]);
-    const [currency, setCurrency] = useState({
-        name: "usd",
-        symbol: "$"
-    })
+  useEffect(() => {
+    const controller = new AbortController();
 
-    const fetchAllCoin = async () => {
-        const options ={
-            method: 'GET',
-            headers: {accept: 'application/json', 'x-cg-demo-api-key' : 'CG-91Na3gF37jLkMimFB9B4FtwP'}
-        };
+    const loadCoins = async () => {
+      setIsLoading(true);
+      setError('');
 
-        fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=${currency.name}`, options)
-        .then(response => response.json())
-        .then(response => setAllcoin(response))
-        .catch(err => console.error(err));
-    }
+      try {
+        const response = await fetchCoinsMarkets(currency.name, controller.signal);
+        setAllCoin(Array.isArray(response) ? response : []);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          setError(err.message || 'Unable to load market data right now.');
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    };
 
-useEffect(()=>{
-    fetchAllCoin();
-},[currency])
+    loadCoins();
 
-    const contextValue = {
-        allCoin, currency, setCurrency
-    }
+    return () => controller.abort();
+  }, [currency]);
 
-    return (
-        <CoinContext.Provider value={contextValue}>
-            {props.children}
+  const contextValue = {
+    allCoin,
+    currency,
+    setCurrency,
+    supportedCurrencies,
+    isLoading,
+    error,
+  };
 
-        </CoinContext.Provider>
-    )
-}
+  return <CoinContext.Provider value={contextValue}>{children}</CoinContext.Provider>;
+};
 
 export default CoinContextProvider;
